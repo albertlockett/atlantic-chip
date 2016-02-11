@@ -1,9 +1,13 @@
 package ca.albertlockett.atlanticchip.model;
 
-public class Racer {
+import java.io.Serializable;
 
-	private int place;
-	private int bibNo;
+public class Racer implements Serializable {
+
+	private static final long serialVersionUID = 1081891241159349293L;
+	
+	private String place;
+	private String bibNo;
 	private String name;
 	private String city;
 	private String Prov;
@@ -11,23 +15,25 @@ public class Racer {
 	private String div;
 	private String gunTime;
 	private String kmpace;
+	private String country;
+	private String gender;
 	
-	public int getPlace() {
+	public String getPlace() {
 		return place;
 	}
-	
-	public void setPlace(int place) {
+
+	public void setPlace(String place) {
 		this.place = place;
 	}
-	
-	public int getBibNo() {
+
+	public String getBibNo() {
 		return bibNo;
 	}
-	
-	public void setBibNo(int bibNo) {
+
+	public void setBibNo(String bibNo) {
 		this.bibNo = bibNo;
 	}
-	
+
 	public String getName() {
 		return name;
 	}
@@ -83,5 +89,24 @@ public class Racer {
 	public void setKmpace(String kmpace) {
 		this.kmpace = kmpace;
 	}
+
+	public String getCountry() {
+		return country;
+	}
+
+	public void setCountry(String country) {
+		this.country = country;
+	}
+
+	public String getGender() {
+		return gender;
+	}
+
+	public void setGender(String gender) {
+		this.gender = gender;
+	}
+	
+	
+	
 	
 }

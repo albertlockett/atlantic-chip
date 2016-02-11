@@ -1,6 +1,7 @@
 package ca.albertlockett.atlanticchip.model;
 
 import java.io.Serializable;
+import java.util.List;
 
 public class Race implements Serializable {
 
@@ -8,6 +9,8 @@ public class Race implements Serializable {
 	
 	private String name;
 	private String location;
+	
+	private List<Racer> racers;
 	
 	public String getName() {
 		return name;
@@ -21,6 +24,14 @@ public class Race implements Serializable {
 	public void setLocation(String location) {
 		this.location = location;
 	}
+	
+	public List<Racer> getRacers() {
+		return racers;
+	}
+	public void setRacers(List<Racer> racers) {
+		this.racers = racers;
+	}
+	
 	
 	
 	

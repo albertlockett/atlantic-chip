@@ -5,6 +5,7 @@ import java.io.InputStreamReader;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import org.apache.spark.SparkConf;
@@ -17,6 +18,7 @@ import org.jsoup.nodes.Element;
 
 import ca.albertlockett.atlanticchip.model.Race;
 import ca.albertlockett.atlanticchip.model.RunningRace;
+import ca.albertlockett.atlanticchip.util.DateTimeUtils;
 
 public class SparkApp1 {
 
@@ -27,7 +29,7 @@ public class SparkApp1 {
 		JavaSparkContext sc = new JavaSparkContext(conf);
 		
 		List<Integer> eventIds = new ArrayList<Integer>();
-		for(int i = 2000; i < 2003; i++) {
+		for(int i = 1900; i < 2003; i++) {
 			eventIds.add(i);
 		}
 		
@@ -66,29 +68,63 @@ public class SparkApp1 {
 			public String call(String pageContent) throws Exception {
 				Document doc = Jsoup.parse(pageContent);
 				Element pre = doc.select("pre").first();
-				return pre.text();
+				try {
+					return pre.text();
+				} catch(Exception e) {
+					return "";
+				}
+			}
+		}).filter(new Function<String, Boolean>() { // filter not null
+			@Override
+			public Boolean call(String content) throws Exception {
+				return content != null && !"".equals(content);
 			}
 		});
 		
 		JavaRDD<Race> races = preContent.map(new RaceContentParser());
 		
+		
+		Date before = new Date();
 		List<Race> races2 = races.collect();
+		Date after = new Date();
+		
+		
 		for(Race race : races2) {
-			StringBuilder raceDescriptor = new StringBuilder();
-			if(race instanceof RunningRace) {
-				raceDescriptor.append("Run").append(", ");
-			} else {
-				raceDescriptor.append("Triathalong").append(", ");
+			
+			if(race == null) {
+				System.err.println("Error - race returned null");
+				continue;
 			}
 			
-			raceDescriptor.append(race.getName()).append(", ");
+			StringBuilder raceDescriptor = new StringBuilder();
+			if(race instanceof RunningRace) {
+				raceDescriptor.append("Run").append(",\t");
+			} else {
+				raceDescriptor.append("Triathalong").append(",\t");
+			}
+			
+			raceDescriptor.append(race.getName()).append(",\t");
 			
 			if(race instanceof RunningRace) {
-				raceDescriptor.append(((RunningRace) race).getDistance());
+				RunningRace run = (RunningRace) race;
+				raceDescriptor.append(run.getDistance());
+				
+				if(race.getRacers() != null) {
+					raceDescriptor.append(",\t")
+					.append(race.getRacers().size())
+					.append(" racers");
+				} else {
+					raceDescriptor.append(",\t Error getting racers");
+				}
+				
 			}
 			
 			System.out.println(raceDescriptor.toString());
 		}
+		
+		// print time to run
+		System.out.println("running time:");
+		DateTimeUtils.printDifference(before, after);
 	}
 	
 }
