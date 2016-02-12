@@ -6,7 +6,9 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaRDD;
@@ -19,17 +21,28 @@ import org.jsoup.nodes.Element;
 import ca.albertlockett.atlanticchip.model.Race;
 import ca.albertlockett.atlanticchip.model.RunningRace;
 import ca.albertlockett.atlanticchip.util.DateTimeUtils;
+import ca.albertlockett.dao.AbstractModelDao;
 
 public class SparkApp1 {
-
+	
+	private static final AbstractModelDao modelDao = new AbstractModelDao();
 	
 	public static void main(String[] args) {
+		
+		// try to parse application arguements
+		Map<String, Object> params = null;
+		try {
+			params = parseArguements(args);
+		} catch(IllegalArgumentException e) {
+			printHelpInformation();
+			return;
+		}
 		
 		SparkConf conf = new SparkConf().setAppName("App1").setMaster("local");
 		JavaSparkContext sc = new JavaSparkContext(conf);
 		
 		List<Integer> eventIds = new ArrayList<Integer>();
-		for(int i = 0; i < 2621; i++) {
+		for(int i = 2000; i < 2001; i++) {
 			eventIds.add(i);
 		}
 		
@@ -79,12 +92,12 @@ public class SparkApp1 {
 		
 		JavaRDD<Race> races = preContent.map(new RaceContentParser());
 		
-		
+		// run parsing and time it
 		Date before = new Date();
 		List<Race> races2 = races.collect();
 		Date after = new Date();
 		
-		
+		// process processed races
 		for(Race race : races2) {
 			
 			if(race == null) {
@@ -92,6 +105,7 @@ public class SparkApp1 {
 				continue;
 			}
 			
+			// build log output for each race
 			StringBuilder raceDescriptor = new StringBuilder();
 			if(race instanceof RunningRace) {
 				raceDescriptor.append("Run").append(",\t");
@@ -115,7 +129,13 @@ public class SparkApp1 {
 				
 			}
 			
+			// log
 			System.out.println(raceDescriptor.toString());
+			
+			// possibly persist
+			if(params.get("persist").equals(true)) {
+				modelDao.save(race);
+			}
 		}
 		
 		// print time to run
@@ -123,4 +143,18 @@ public class SparkApp1 {
 		DateTimeUtils.printDifference(before, after);
 	}
 	
+	
+	
+	private static Map<String, Object> parseArguements(String[] args) 
+			throws IllegalArgumentException {
+		Map<String, Object> params = new HashMap<String, Object>();
+		params.put("persist", true);
+		return params;
+	}
+	
+	public static void printHelpInformation() {
+		StringBuilder helpInfo = new StringBuilder();
+		helpInfo.append("here is some useful help info\n")
+			.append("TODO");
+	}
 }

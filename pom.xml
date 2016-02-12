@@ -28,11 +28,18 @@
     	<version>1.6.0</version>
     </dependency>
     
-<!--     <dependency> -->
-<!--     	<groupId>org.apache.hadoop</groupId> -->
-<!--     	<artifactId>hadoop-client </artifactId> -->
-<!--     	<version>2.7.0</version> -->
-<!--     </dependency> -->
+	<dependency>
+		<groupId>com.oracle</groupId>
+		<artifactId>ojdbc6</artifactId>
+		<version>11.2.0.4</version>
+	</dependency>
+    <dependency>
+		<groupId>org.hibernate</groupId>
+		<artifactId>hibernate-core</artifactId>
+		<version>3.6.3.Final</version>
+	</dependency>
+
+    
     
     <dependency>
     	<groupId>org.jsoup</groupId>

@@ -1,4 +1,4 @@
-package ca.albertlockett.AtlanticChipScraper;
+package ca.albertlockett.atlanticchip;
 
 import junit.framework.Test;
 import junit.framework.TestCase;
