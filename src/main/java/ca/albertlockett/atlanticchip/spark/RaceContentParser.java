@@ -102,8 +102,8 @@ public class RaceContentParser implements Function<String, Race> {
 		
 		// legend spacer line is next line
 		char[] legendSpacerLine = lines[currentIndex].toCharArray();
-		List<Integer> fieldStartIndices = new ArrayList<>();
-		List<Integer> fieldEndIndices = new ArrayList<>();
+		List<Integer> fieldStartIndices = new ArrayList<Integer>();
+		List<Integer> fieldEndIndices = new ArrayList<Integer>();
 		
 		// from legend line, need to compute start and end sequences
 		for(int i = 0; i < legendSpacerLine.length; i++) {
@@ -157,7 +157,7 @@ public class RaceContentParser implements Function<String, Race> {
 		
 		// try to parse racer information
 		int racerLineIndex = ++currentIndex;
-		List<Racer> racers = new ArrayList<>();
+		List<Racer> racers = new ArrayList<Racer>();
 		while(racerLineIndex < lines.length && 
 				!lines[racerLineIndex].matches("^\\s$")) {
 		

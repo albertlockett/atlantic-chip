@@ -29,7 +29,7 @@ public class SparkApp1 {
 		JavaSparkContext sc = new JavaSparkContext(conf);
 		
 		List<Integer> eventIds = new ArrayList<Integer>();
-		for(int i = 1900; i < 2003; i++) {
+		for(int i = 0; i < 2621; i++) {
 			eventIds.add(i);
 		}
 		
@@ -37,7 +37,6 @@ public class SparkApp1 {
 		
 		// get page content from url
 		JavaRDD<String> content = eventIdsRDD.map(new Function<Integer, String>() {
-			@Override
 			public String call(Integer eventId) throws Exception {
 				URL resultsPage = new URL("http://albertlockett.ca/pages/" 
 							+ eventId + ".html");
@@ -56,7 +55,6 @@ public class SparkApp1 {
 		
 		// filter page content for errors
 		JavaRDD<String> contentNoErrors = content.filter(new Function<String, Boolean>() {
-			@Override
 			public Boolean call(String pageContent) throws Exception {
 				return !pageContent.toLowerCase().contains("error");
 			}
@@ -64,7 +62,6 @@ public class SparkApp1 {
 		
 		// try to parse out only pre formatted content
 		JavaRDD<String> preContent = contentNoErrors.map(new Function<String, String>() {
-			@Override
 			public String call(String pageContent) throws Exception {
 				Document doc = Jsoup.parse(pageContent);
 				Element pre = doc.select("pre").first();
@@ -75,7 +72,6 @@ public class SparkApp1 {
 				}
 			}
 		}).filter(new Function<String, Boolean>() { // filter not null
-			@Override
 			public Boolean call(String content) throws Exception {
 				return content != null && !"".equals(content);
 			}
