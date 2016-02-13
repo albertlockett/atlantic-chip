@@ -26,6 +26,13 @@ public class SparkApp1 {
 	
 	public static void main(String[] args) throws Exception {
 		
+		// show help menu?
+		for(String arg : args) {
+			if(arg.equals("--help")) {
+				printHelpInformation(); return;
+			}
+		}
+		
 		// try to parse application arguements
 		Map<String, Object> params = null;
 		try {
