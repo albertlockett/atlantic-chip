@@ -2,6 +2,9 @@ package ca.albertlockett.atlanticchip.util;
 
 import java.util.Date;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * date time utils - adapted from
  * http://www.mkyong.com/java/java-time-elapsed-in-days-hours-minutes-seconds/
@@ -10,17 +13,25 @@ import java.util.Date;
  *
  */
 public class DateTimeUtils {
+	
+	private static final Logger logger = LoggerFactory
+			.getLogger(DateTimeUtils.class);
+	
+	public static void printDifference(Date startDate, Date endDate) {
+		printDifference(startDate, endDate, logger);
+	}
+	
 	//1 minute = 60 seconds
 	//1 hour = 60 x 60 = 3600
 	//1 day = 3600 x 24 = 86400
-	public static void printDifference(Date startDate, Date endDate){
+	public static void printDifference(Date startDate, Date endDate, Logger logger){
 	
 		//milliseconds
 		long different = endDate.getTime() - startDate.getTime();
 		
-		System.out.println("startDate : " + startDate);
-		System.out.println("endDate : "+ endDate);
-		System.out.println("different : " + different);
+		logger.info("startDate : " + startDate);
+		logger.info("endDate : "+ endDate);
+		logger.info("different : " + different);
 		
 		long secondsInMilli = 1000;
 		long minutesInMilli = secondsInMilli * 60;
@@ -38,9 +49,11 @@ public class DateTimeUtils {
 		
 		long elapsedSeconds = different / secondsInMilli;
 		
-		System.out.printf(
-		    "%d days, %d hours, %d minutes, %d seconds%n", 
-		    elapsedDays,
-		    elapsedHours, elapsedMinutes, elapsedSeconds);
+		StringBuilder dateDiff = new StringBuilder();
+		dateDiff.append(elapsedDays).append(" days,")
+				.append(elapsedHours).append(" hours,")
+				.append(elapsedMinutes).append(" minutes,")
+				.append(elapsedSeconds).append(" seconds");
+		logger.info(dateDiff.toString());
 	}		
 }

@@ -6,6 +6,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.spark.api.java.function.Function;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import ca.albertlockett.atlanticchip.model.Race;
 import ca.albertlockett.atlanticchip.model.Racer;
@@ -14,6 +16,9 @@ import ca.albertlockett.atlanticchip.model.Triathalon;
 
 public class RaceContentParser implements Function<String, Race> {
 
+	private static final Logger logger = LoggerFactory
+			.getLogger(RaceContentParser.class);
+	
 	private static final long serialVersionUID = 4763990198093654100L;
 
 	public Race call(String flatContent) {
@@ -67,7 +72,7 @@ public class RaceContentParser implements Function<String, Race> {
 					((RunningRace)race).setDistance(42.2);
 				}
 			} catch(Exception e) {
-				System.err.println("Could not parse distance from race title" + 
+				logger.error("Could not parse distance from race title" + 
 						titleLine);
 			}
 			
@@ -149,7 +154,7 @@ public class RaceContentParser implements Function<String, Race> {
 							.append(startI).append(" - ").append(endI)
 							.append("from line '").append(legendLine)
 							.append("'");
-					System.err.println(errorMessage.toString());
+					logger.error(errorMessage.toString());
 				}
 			}
 			legendFieldNames.add(fieldName.toString().trim());
@@ -179,7 +184,7 @@ public class RaceContentParser implements Function<String, Race> {
 				try {
 					fieldInfo = racerLine.substring(startI, endI).trim();
 				} catch(Exception e) {
-					System.err.println("error parsing line: " + racerLine);
+					logger.error("error parsing line: " + racerLine);
 					break;
 				}
 				
@@ -268,7 +273,7 @@ public class RaceContentParser implements Function<String, Race> {
 					continue;
 				}
 				
-				System.err.println("Could not racer field:" + fieldName);
+				logger.error("Could not racer field: {}", fieldName);
 			}
 			
 			racers.add(racer);

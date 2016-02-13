@@ -1,10 +1,7 @@
 package ca.albertlockett.atlanticchip.spark;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -14,147 +11,272 @@ import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.Function;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import ca.albertlockett.atlanticchip.model.Race;
 import ca.albertlockett.atlanticchip.model.RunningRace;
 import ca.albertlockett.atlanticchip.util.DateTimeUtils;
-import ca.albertlockett.dao.AbstractModelDao;
+import ca.albertlockett.atlanticchip.util.MultiLineStringBuilder;
 
 public class SparkApp1 {
 	
-	private static final AbstractModelDao modelDao = new AbstractModelDao();
+	private static final Logger logger = LoggerFactory
+			.getLogger(SparkApp1.class);
 	
-	public static void main(String[] args) {
+	public static void main(String[] args) throws Exception {
 		
 		// try to parse application arguements
 		Map<String, Object> params = null;
 		try {
 			params = parseArguements(args);
 		} catch(IllegalArgumentException e) {
+			logger.error(e.getMessage());
 			printHelpInformation();
 			return;
 		}
 		
+		// configure spark
 		SparkConf conf = new SparkConf().setAppName("App1").setMaster("local");
 		JavaSparkContext sc = new JavaSparkContext(conf);
 		
+		// create RDD with event IDs
 		List<Integer> eventIds = new ArrayList<Integer>();
-		for(int i = 2000; i < 2001; i++) {
+		Integer minEventId = (Integer) params.get("minEventId");
+		Integer maxEventId = (Integer) params.get("maxEventId");
+		for(int i = minEventId; i < maxEventId; i++) {
 			eventIds.add(i);
 		}
-		
 		JavaRDD<Integer> eventIdsRDD = sc.parallelize(eventIds);
 		
 		// get page content from url
-		JavaRDD<String> content = eventIdsRDD.map(new Function<Integer, String>() {
-			public String call(Integer eventId) throws Exception {
-				URL resultsPage = new URL("http://albertlockett.ca/pages/" 
-							+ eventId + ".html");
-				
-				BufferedReader in = new BufferedReader(
-						new InputStreamReader(resultsPage.openStream(), 
-								StandardCharsets.ISO_8859_1));
-				StringBuilder pageContent = new StringBuilder();
-				while(in.ready()) {
-					pageContent.append(in.readLine()).append("\n");
-					
-				}
-				return pageContent.toString();
-			}
-		});
+		String baseUrl = "http://albertlockett.ca/pages/";
+		JavaRDD<String> content = eventIdsRDD.map(new LoadRaceInfoHtml(baseUrl));
 		
 		// filter page content for errors
-		JavaRDD<String> contentNoErrors = content.filter(new Function<String, Boolean>() {
+		JavaRDD<String> contentNoErrors = content.filter(
+				new Function<String, Boolean>() {
+			private static final long serialVersionUID = 5985725493233165226L;
 			public Boolean call(String pageContent) throws Exception {
 				return !pageContent.toLowerCase().contains("error");
 			}
 		});
 		
 		// try to parse out only pre formatted content
-		JavaRDD<String> preContent = contentNoErrors.map(new Function<String, String>() {
-			public String call(String pageContent) throws Exception {
-				Document doc = Jsoup.parse(pageContent);
-				Element pre = doc.select("pre").first();
-				try {
-					return pre.text();
-				} catch(Exception e) {
-					return "";
+		JavaRDD<String> preContent = contentNoErrors
+			.map(new ParsePreRaceInfoFromHtmlDoc())
+			.filter(new Function<String, Boolean>() { // filter not null
+				private static final long serialVersionUID = 
+						2654986630629950682L;
+				public Boolean call(String content) throws Exception {
+					return content != null && !"".equals(content);
 				}
-			}
-		}).filter(new Function<String, Boolean>() { // filter not null
-			public Boolean call(String content) throws Exception {
-				return content != null && !"".equals(content);
-			}
 		});
 		
-		JavaRDD<Race> races = preContent.map(new RaceContentParser());
+		// parse race content from preformated race info
+		JavaRDD<Race> racesRDD = preContent.map(new RaceContentParser());
 		
 		// run parsing and time it
 		Date before = new Date();
-		List<Race> races2 = races.collect();
+		List<Race> races = racesRDD.collect();
 		Date after = new Date();
+		logger.info("running time:");
+		DateTimeUtils.printDifference(before, after);
 		
-		// process processed races
-		for(Race race : races2) {
-			
+		// log race event info if user wishes
+		if((Boolean) params.get("logEventInfo")) {
+			printRaceInfo(races);
+		}
+		
+		// persist race info to db if user wishes
+		if((Boolean) params.get("persist")) {
+			persistRaces(races);
+		}
+		
+		sc.close();
+	}
+	
+	private static void printRaceInfo(List<Race> races) {
+		for(Race race : races) {
 			if(race == null) {
-				System.err.println("Error - race returned null");
+				logger.error("Error - race returned null");
 				continue;
 			}
 			
 			// build log output for each race
 			StringBuilder raceDescriptor = new StringBuilder();
 			if(race instanceof RunningRace) {
-				raceDescriptor.append("Run").append(",\t");
+				raceDescriptor.append("Run").append(",");
 			} else {
-				raceDescriptor.append("Triathalong").append(",\t");
+				raceDescriptor.append("Triathalon").append(",");
 			}
 			
-			raceDescriptor.append(race.getName()).append(",\t");
+			raceDescriptor.append(race.getName()).append(",");
 			
 			if(race instanceof RunningRace) {
 				RunningRace run = (RunningRace) race;
 				raceDescriptor.append(run.getDistance());
 				
 				if(race.getRacers() != null) {
-					raceDescriptor.append(",\t")
+					raceDescriptor.append(",")
 					.append(race.getRacers().size())
 					.append(" racers");
 				} else {
-					raceDescriptor.append(",\t Error getting racers");
+					raceDescriptor.append(",Error getting racers");
 				}
-				
 			}
 			
 			// log
-			System.out.println(raceDescriptor.toString());
-			
-			// possibly persist
-			if(params.get("persist").equals(true)) {
-				modelDao.save(race);
-			}
+			logger.info(raceDescriptor.toString());
 		}
-		
-		// print time to run
-		System.out.println("running time:");
-		DateTimeUtils.printDifference(before, after);
 	}
 	
+	private static void persistRaces(List<Race> races) throws Exception {
+		throw new Exception("Method not implemented");
+	}
 	
-	
+	// parse application argeuments from 
 	private static Map<String, Object> parseArguements(String[] args) 
 			throws IllegalArgumentException {
 		Map<String, Object> params = new HashMap<String, Object>();
-		params.put("persist", true);
+		
+		// put default configurations in param map for non required args ---
+		params.put("logRaceInfo", false);
+		params.put("persist", false);
+		params.put("minEventId", 0);
+		
+		// try to parse arguments from what's passed at runtime
+		for(int i = 0; i < args.length; i++) {
+			
+			// required arguments -----------------------------------------
+			
+			// base URL
+			if(args[i].equals("--baseUrl")) {
+				String baseUrlErrMsg = 
+						"Expected valid URL as argument for --baseUrl flag";
+				if(i == args.length - 1) {
+					throw new IllegalArgumentException(baseUrlErrMsg);
+				}
+				if(args[i + 1].startsWith("--")) {
+					throw new IllegalArgumentException(baseUrlErrMsg);
+				}
+				params.put("baseUrl", args[i + 1]);
+				i++; continue;
+			}
+			
+			// parse maxEventID argument
+			if(args[i].equals("--maxEventId")) {
+				String maxEventIdMsg = 
+						"Expected number as arguement to --maxEventId flag";
+				if(i == args.length - 1) {
+					throw new IllegalArgumentException(maxEventIdMsg);
+				}
+				try {
+					Integer maxEventId = Integer.parseInt(args[i + 1]);
+					params.put("maxEventId", maxEventId);
+				} catch(NumberFormatException e) {
+					throw new IllegalArgumentException(maxEventIdMsg);
+				}
+			}
+			
+			// parse minEventId argument
+			if(args[i].equals("--minEventId")) {
+				String minEventIdMsg = 
+						"Expected number as arguement to --minEventId flag";
+				if(i == args.length - 1) {
+					throw new IllegalArgumentException(minEventIdMsg);
+				}
+				try {
+					Integer minEventId = Integer.parseInt(args[i + 1]);
+					params.put("minEventId", minEventId);
+					i++; continue;
+				} catch(NumberFormatException e) {
+					throw new IllegalArgumentException(minEventIdMsg);
+				}
+			}
+			
+			// parse logEventInfo argument
+			if(args[i].equals("--logEventInfo")) {
+				String logEventInfoErrMsg = 
+					"Expected true/false as argument to --logEventInfo flag";
+				if(i == args.length - 1) {
+					throw new IllegalArgumentException(logEventInfoErrMsg);
+				}
+				String logEventInfo = args[i + 1];
+				if(logEventInfo.toLowerCase().equals("true")) {
+					params.put("logEventInfo", true);
+					i++; continue;
+				} else if(logEventInfo.toLowerCase().equals("false")) {
+					params.put("logEventInfo", false);
+					i++; continue;
+				} else {
+					throw new IllegalArgumentException(logEventInfoErrMsg);
+				}
+			}
+			
+			// parse persist argument
+			if(args[i].equals("--persist")) {
+				String persistErrMsg = 
+						"Expected true/false as arguement to --persist flag";
+				if(i == args.length - 1) {
+					throw new IllegalArgumentException(persistErrMsg);
+				}
+				String persist = args[i + 1];
+				if(persist.toLowerCase().equals("true")) {
+					params.put("persist", true);
+					i++; continue;
+				} else if(persist.toLowerCase().equals("false")) {
+					params.put("persist", false);
+					i++; continue;
+				} else {
+					throw new IllegalArgumentException(persistErrMsg);
+				}
+			}
+			
+		}
+		
+		// check that params contains all required arguements
+		List<String> requiredArgs = Arrays.asList("baseUrl", "maxEventId");
+		for(String argName : requiredArgs) {
+			if(!params.containsKey(argName)) {
+				throw new IllegalArgumentException("--" + argName + 
+						" is a required argument");
+			}
+		}
+		
 		return params;
 	}
 	
+	
 	public static void printHelpInformation() {
-		StringBuilder helpInfo = new StringBuilder();
-		helpInfo.append("here is some useful help info\n")
-			.append("TODO");
+		MultiLineStringBuilder helpInfo = new MultiLineStringBuilder();
+		helpInfo.append("\n")
+				.addLine("Albert's atlanticchip.ca scraper")
+				.addLine("TODO: Add description of purpose for")
+				.addLine("====================================================")
+				
+				.addLine("REQUIRED ARGUMENTS ---")
+				// baseUrl
+				.addLine("\t--baseUrl: base url to load race information from")
+				// maxEventId
+				.addLine("\t--maxEventId: max event Id to load race info for")
+				
+				.addLine("OPTINOAL ARGUMENTS ---")
+				// minEventId
+				.append("\t--minEventId: min event ID to load race info for")
+					.append(" - defaults to 0").append("\n")
+				// log race info
+				.append("\t--logEventInfo: print info for parsed events to ")
+					.append("std out - defaults to false").append("\n")
+				// persist
+				.append("\t--persist=<true/false> - persist races/racers to db")
+					.append(" defaults to false").append(" \n")
+				
+				// credits
+				.addLine("----------------------------------------------------")
+				.addLine("Author: Albert Lockett - 2016");
+		
+		logger.info(helpInfo.toString());
 	}
+	
 }
