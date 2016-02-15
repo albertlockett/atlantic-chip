@@ -25,3 +25,5 @@ CREATE TABLE RACER (
   MILE_PACE   VARCHAR2(50),
   PRIMARY KEY (RACER_ID)
 );
+
+create sequence seq_racer_id increment by 1 maxvalue 9999999999999999999;

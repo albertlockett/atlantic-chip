@@ -14,6 +14,7 @@ import org.apache.spark.api.java.function.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import ca.albertlockett.atlanticchip.dao.AbstractModelDao;
 import ca.albertlockett.atlanticchip.model.Race;
 import ca.albertlockett.atlanticchip.model.RunningRace;
 import ca.albertlockett.atlanticchip.util.DateTimeUtils;
@@ -23,6 +24,8 @@ public class SparkApp1 {
 	
 	private static final Logger logger = LoggerFactory
 			.getLogger(SparkApp1.class);
+
+	private static AbstractModelDao modelDao = new AbstractModelDao();
 	
 	public static void main(String[] args) throws Exception {
 		
@@ -139,7 +142,17 @@ public class SparkApp1 {
 	}
 	
 	private static void persistRaces(List<Race> races) throws Exception {
-		throw new Exception("Method not implemented");
+		
+		// TODO: have the app set the race ID
+		int raceId = 0;
+		for(Race race : races) {
+			if(race.getRaceId() == null) {
+				race.setRaceId(raceId++);
+				modelDao.save(race);
+			}
+		}
+		
+		
 	}
 	
 	// parse application argeuments from 

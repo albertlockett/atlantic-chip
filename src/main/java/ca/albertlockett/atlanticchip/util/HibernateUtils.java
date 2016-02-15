@@ -22,7 +22,8 @@ public class HibernateUtils {
 			// Create sessionFactory from hibernate.cfg.xml
 			return new Configuration().configure().buildSessionFactory();
 		} catch(Throwable ex) {
-			logger.error("Initial sessionFactory creation failed: {}", ex);
+			logger.error("Initial sessionFactory creation failed: {}", 
+					ex.getMessage());
 			throw new ExceptionInInitializerError(ex);
 		}
 	}

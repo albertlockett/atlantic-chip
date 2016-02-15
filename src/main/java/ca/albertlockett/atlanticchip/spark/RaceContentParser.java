@@ -276,8 +276,8 @@ public class RaceContentParser implements Function<String, Race> {
 				logger.error("Could not racer field: {}", fieldName);
 			}
 			
+			racer.setRace(race);
 			racers.add(racer);
-			
 			
 		}
 		

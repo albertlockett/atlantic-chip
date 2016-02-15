@@ -2,10 +2,25 @@ package ca.albertlockett.atlanticchip.model;
 
 import java.io.Serializable;
 
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.SequenceGenerator;
+import javax.persistence.Table;
+import javax.persistence.Transient;
+
+@Entity
+@Table(name = "RACER")
 public class Racer implements Serializable {
 
 	private static final long serialVersionUID = 1081891241159349293L;
 	
+	private Integer raceId;
 	private String place;
 	private String bibNo;
 	private String name;
@@ -18,6 +33,33 @@ public class Racer implements Serializable {
 	private String country;
 	private String gender;
 	
+	private Race Race;
+	
+	@Id
+	@Column(name="RACER_ID", unique=true, nullable=false, precision=9, scale=0)
+	@GeneratedValue(strategy = GenerationType.SEQUENCE, 
+			generator="SEQ_RACER_ID")
+	@SequenceGenerator(name="SEQ_RACER_ID", sequenceName="SEQ_RACER_ID",
+			allocationSize=1)
+	public Integer getRaceId() {
+		return this.raceId;
+	}
+	
+	public void setRaceId(Integer raceId) {
+		this.raceId = raceId;
+	}
+	
+	@ManyToOne(fetch=FetchType.EAGER)
+	@JoinColumn(name="RACE_ID", nullable=false)
+	public Race getRace() {
+		return Race;
+	}
+
+	public void setRace(Race race) {
+		Race = race;
+	}
+
+	@Transient
 	public String getPlace() {
 		return place;
 	}
@@ -26,6 +68,7 @@ public class Racer implements Serializable {
 		this.place = place;
 	}
 
+	@Transient
 	public String getBibNo() {
 		return bibNo;
 	}
@@ -34,6 +77,7 @@ public class Racer implements Serializable {
 		this.bibNo = bibNo;
 	}
 
+	@Transient
 	public String getName() {
 		return name;
 	}
@@ -42,6 +86,7 @@ public class Racer implements Serializable {
 		this.name = name;
 	}
 	
+	@Transient
 	public String getCity() {
 		return city;
 	}
@@ -50,6 +95,7 @@ public class Racer implements Serializable {
 		this.city = city;
 	}
 	
+	@Transient
 	public String getProv() {
 		return Prov;
 	}
@@ -58,6 +104,7 @@ public class Racer implements Serializable {
 		Prov = prov;
 	}
 	
+	@Transient
 	public String getDivPlace() {
 		return divPlace;
 	}
@@ -66,6 +113,7 @@ public class Racer implements Serializable {
 		this.divPlace = divPlace;
 	}
 	
+	@Transient
 	public String getDiv() {
 		return div;
 	}
@@ -74,6 +122,7 @@ public class Racer implements Serializable {
 		this.div = div;
 	}
 	
+	@Transient
 	public String getGunTime() {
 		return gunTime;
 	}
@@ -82,6 +131,7 @@ public class Racer implements Serializable {
 		this.gunTime = gunTime;
 	}
 	
+	@Transient
 	public String getKmpace() {
 		return kmpace;
 	}
@@ -90,6 +140,7 @@ public class Racer implements Serializable {
 		this.kmpace = kmpace;
 	}
 
+	@Transient
 	public String getCountry() {
 		return country;
 	}
@@ -98,6 +149,7 @@ public class Racer implements Serializable {
 		this.country = country;
 	}
 
+	@Transient
 	public String getGender() {
 		return gender;
 	}
