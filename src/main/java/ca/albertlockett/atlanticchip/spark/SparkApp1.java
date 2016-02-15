@@ -47,7 +47,8 @@ public class SparkApp1 {
 		}
 		
 		// configure spark
-		SparkConf conf = new SparkConf().setAppName("App1").setMaster("local");
+		String master = (String) params.get("master");
+		SparkConf conf = new SparkConf().setAppName("App1").setMaster(master);
 		JavaSparkContext sc = new JavaSparkContext(conf);
 		
 		// create RDD with event IDs
@@ -60,7 +61,7 @@ public class SparkApp1 {
 		JavaRDD<Integer> eventIdsRDD = sc.parallelize(eventIds);
 		
 		// get page content from url
-		String baseUrl = "http://albertlockett.ca/pages/";
+		String baseUrl = (String) params.get("baseUrl");
 		JavaRDD<String> content = eventIdsRDD.map(new LoadRaceInfoHtml(baseUrl));
 		
 		// filter page content for errors
@@ -146,9 +147,15 @@ public class SparkApp1 {
 		// TODO: have the app set the race ID
 		int raceId = 0;
 		for(Race race : races) {
-			if(race.getRaceId() == null) {
-				race.setRaceId(raceId++);
-				modelDao.save(race);
+			try {
+				if(race.getRaceId() == null) {
+					race.setRaceId(raceId++);
+					modelDao.save(race);
+				}
+			} catch(Exception e) {
+				logger.error("error saving race {}", race.toString());
+				logger.error(e.getMessage());
+				e.printStackTrace();
 			}
 		}
 		
@@ -164,6 +171,7 @@ public class SparkApp1 {
 		params.put("logRaceInfo", false);
 		params.put("persist", false);
 		params.put("minEventId", 0);
+		params.put("master", "local");
 		
 		// try to parse arguments from what's passed at runtime
 		for(int i = 0; i < args.length; i++) {
@@ -182,6 +190,20 @@ public class SparkApp1 {
 				}
 				params.put("baseUrl", args[i + 1]);
 				i++; continue;
+			}
+			
+			if(args[i].equals("--master")) {
+				String masterErrMsg = 
+						"Expected parameter as arguement to master";
+				if(i == args.length - 1) {
+					throw new IllegalArgumentException(masterErrMsg);
+				}
+				if(args[i + 1].startsWith("--")) {
+					throw new IllegalArgumentException(masterErrMsg);
+				}
+				params.put("master", args[i + 1]);
+				i++; continue;
+				
 			}
 			
 			// parse maxEventID argument
@@ -282,6 +304,8 @@ public class SparkApp1 {
 				.addLine("\t--maxEventId: max event Id to load race info for")
 				
 				.addLine("OPTINOAL ARGUMENTS ---")
+				// master
+				.addLine("\t--master:url of spark master")
 				// minEventId
 				.append("\t--minEventId: min event ID to load race info for")
 					.append(" - defaults to 0").append("\n")

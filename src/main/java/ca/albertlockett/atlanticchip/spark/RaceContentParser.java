@@ -1,6 +1,7 @@
 package ca.albertlockett.atlanticchip.spark;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -163,6 +164,14 @@ public class RaceContentParser implements Function<String, Race> {
 		// try to parse racer information
 		int racerLineIndex = ++currentIndex;
 		List<Racer> racers = new ArrayList<Racer>();
+		
+		// peices of information not interested in capturing
+		List<String> ignoreFields = Arrays.asList("",
+				"split time","split place",
+				"team", "team name", "team no", 
+				"avg time", "avg. time", 
+				"rookie status");
+		
 		while(racerLineIndex < lines.length && 
 				!lines[racerLineIndex].matches("^\\s$")) {
 		
@@ -195,6 +204,10 @@ public class RaceContentParser implements Function<String, Race> {
 					racer.setPlace(fieldInfo);
 					continue;
 				}
+				if(fieldName.toLowerCase().trim().equals("pos")) {
+					racer.setPlace(fieldInfo);
+					continue;
+				}
 				
 				// bib number
 				if(fieldName.toLowerCase().trim().equals("no.")) {
@@ -208,6 +221,10 @@ public class RaceContentParser implements Function<String, Race> {
 				
 				// name
 				if(fieldName.toLowerCase().trim().equals("name")) {
+					racer.setName(fieldInfo);
+					continue;
+				}
+				if(fieldName.toLowerCase().trim().equals("runner's name")) {
 					racer.setName(fieldInfo);
 					continue;
 				}
@@ -233,6 +250,10 @@ public class RaceContentParser implements Function<String, Race> {
 					racer.setCountry(fieldInfo);
 					continue;
 				}
+				if(fieldName.toLowerCase().trim().equals("co.")) {
+					racer.setCountry(fieldInfo);
+					continue;
+				}
 				
 				// chaleur
 				if(fieldName.toLowerCase().trim().equals("chaleur")) {
@@ -250,6 +271,16 @@ public class RaceContentParser implements Function<String, Race> {
 					racer.setDivPlace(fieldInfo);
 					continue;
 				}
+				if(fieldName.toLowerCase().trim().equals("division total")) {
+					racer.setDivPlace(fieldInfo);
+					continue;
+				}
+				
+				// chip time
+				if(fieldName.toLowerCase().trim().equals("chip time")) {
+					racer.setchipTime(fieldInfo);
+					continue;
+				}
 				
 				// gun time
 				if(fieldName.toLowerCase().trim().equals("gun time")) {
@@ -257,6 +288,10 @@ public class RaceContentParser implements Function<String, Race> {
 					continue;
 				}
 				if(fieldName.toLowerCase().trim().equals("time")) {
+					racer.setGunTime(fieldInfo);
+					continue;
+				}
+				if(fieldName.toLowerCase().trim().equals("total time")) {
 					racer.setGunTime(fieldInfo);
 					continue;
 				}
@@ -273,7 +308,9 @@ public class RaceContentParser implements Function<String, Race> {
 					continue;
 				}
 				
-				logger.error("Could not racer field: {}", fieldName);
+				if(!ignoreFields.contains(fieldName.trim().toLowerCase())) {
+					logger.error("Could not racer field: {}", fieldName);
+				}
 			}
 			
 			racer.setRace(race);

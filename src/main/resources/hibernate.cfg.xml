@@ -13,6 +13,7 @@
 		<property name="show_sql">true</property>
 		<mapping class="ca.albertlockett.atlanticchip.model.Race" />
 		<mapping class="ca.albertlockett.atlanticchip.model.RunningRace" />
+		<mapping class="ca.albertlockett.atlanticchip.model.Triathalon" />
 		<mapping class="ca.albertlockett.atlanticchip.model.Racer" />
 	</session-factory>
 </hibernate-configuration>

@@ -12,7 +12,6 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
-import javax.persistence.Transient;
 
 @Entity
 @Table(name = "RACER")
@@ -28,6 +27,7 @@ public class Racer implements Serializable {
 	private String Prov;
 	private String divPlace;
 	private String div;
+	private String chipTime;
 	private String gunTime;
 	private String kmpace;
 	private String country;
@@ -59,7 +59,7 @@ public class Racer implements Serializable {
 		Race = race;
 	}
 
-	@Transient
+	@Column(name="PLACE", length=50)
 	public String getPlace() {
 		return place;
 	}
@@ -68,7 +68,7 @@ public class Racer implements Serializable {
 		this.place = place;
 	}
 
-	@Transient
+	@Column(name="BIB_NO", length=50)
 	public String getBibNo() {
 		return bibNo;
 	}
@@ -77,7 +77,7 @@ public class Racer implements Serializable {
 		this.bibNo = bibNo;
 	}
 
-	@Transient
+	@Column(name="RACER_NAME", length=50)
 	public String getName() {
 		return name;
 	}
@@ -86,7 +86,7 @@ public class Racer implements Serializable {
 		this.name = name;
 	}
 	
-	@Transient
+	@Column(name="CITY", length=50)
 	public String getCity() {
 		return city;
 	}
@@ -95,7 +95,7 @@ public class Racer implements Serializable {
 		this.city = city;
 	}
 	
-	@Transient
+	@Column(name="PROV", length=50)
 	public String getProv() {
 		return Prov;
 	}
@@ -104,7 +104,7 @@ public class Racer implements Serializable {
 		Prov = prov;
 	}
 	
-	@Transient
+	@Column(name="DIV_PLACE", length=50)
 	public String getDivPlace() {
 		return divPlace;
 	}
@@ -113,7 +113,7 @@ public class Racer implements Serializable {
 		this.divPlace = divPlace;
 	}
 	
-	@Transient
+	@Column(name="DIV", length=50)
 	public String getDiv() {
 		return div;
 	}
@@ -122,7 +122,7 @@ public class Racer implements Serializable {
 		this.div = div;
 	}
 	
-	@Transient
+	@Column(name="GUN_TIME", length=50)
 	public String getGunTime() {
 		return gunTime;
 	}
@@ -131,7 +131,16 @@ public class Racer implements Serializable {
 		this.gunTime = gunTime;
 	}
 	
-	@Transient
+	@Column(name="CHIP_TIME", length=50)
+	public String getChipTime() {
+		return this.chipTime;
+	}
+	
+	public void setchipTime(String chipTime) {
+		this.chipTime = chipTime;
+	}
+	
+	@Column(name="KM_PACE", length=50)
 	public String getKmpace() {
 		return kmpace;
 	}
@@ -140,7 +149,7 @@ public class Racer implements Serializable {
 		this.kmpace = kmpace;
 	}
 
-	@Transient
+	@Column(name="COUNTRY", length=50)
 	public String getCountry() {
 		return country;
 	}
@@ -149,7 +158,7 @@ public class Racer implements Serializable {
 		this.country = country;
 	}
 
-	@Transient
+	@Column(name="GENDER", length=50)
 	public String getGender() {
 		return gender;
 	}
